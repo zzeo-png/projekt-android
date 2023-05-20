@@ -1,5 +1,5 @@
 # Android REPO
 FERI 2. Letnik - Glavni Projekt
 
-## Website Repo
+## Website REPO
 https://github.com/zzeo-png/projekt-android
