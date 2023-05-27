@@ -1,18 +1,36 @@
 package com.example.projektapp
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.provider.Settings
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
+import com.android.volley.Request
+import com.android.volley.Response
+import com.android.volley.toolbox.JsonObjectRequest
 import com.example.projektapp.databinding.ActivityMainBinding
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import org.json.JSONObject
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
@@ -22,6 +40,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var startButton: Button
     private lateinit var stopButton: Button
     private lateinit var sensorManager: SensorManager
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var accelerometer: Sensor ?= null
     private var resume = false
 
@@ -31,6 +50,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         setContentView(binding.root)
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         // nastavi accelometer
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
@@ -38,15 +58,55 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         testButton = binding.testButton
         text1 = binding.text1
 
-        testButton.setOnClickListener{ sendText() }
+        testButton.setOnClickListener{
+            val location = getCurrentLocation()
+            /*if(location != null){
+               postToWeb("test", location[0])
+            }*/
+        }
     }
 
-    private fun sendText(){
+    private fun postToWeb(name: String, value: String){
         // Volley
         val volleyQueue = Volley.newRequestQueue(this)
-        val url = "http://127.0.0.1:3000"
+        val url = "http://34.65.105.245:3000/test"
 
-        Toast.makeText(this, "Text sent to website", Toast.LENGTH_SHORT).show()
+        val jsonObject = JSONObject()
+        jsonObject.put("test", "androidTest")
+
+        val postRequest = object: StringRequest(
+            Method.POST, url,
+            Response.Listener { response ->
+                //Handle response
+                val strResp = response.toString()
+                Toast.makeText(this, strResp, Toast.LENGTH_SHORT).show()
+            },
+            Response.ErrorListener {
+                Toast.makeText(this, "ERROR", Toast.LENGTH_SHORT).show()
+            }) {
+            override fun getParams(): MutableMap<String, String> {
+                val params = HashMap<String, String>()
+                params[name] = value
+                return params
+            }
+        }
+
+        volleyQueue.add(postRequest)
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun getCurrentLocation(): Array<String>?{
+        var temp = arrayOf<String>()
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener { location: Location? ->
+                temp += location?.latitude.toString()
+                Log.i("LEO", "LATITUDE :" + location?.latitude.toString())
+                Toast.makeText(this, "LATITUDE :" + location?.latitude.toString(), Toast.LENGTH_SHORT).show()
+                temp += location?.longitude.toString()
+                Log.i("LEO", "LONGITUDE :" + location?.longitude.toString())
+                Toast.makeText(this, "LONGITUDE :" + location?.longitude.toString(), Toast.LENGTH_SHORT).show()
+            }
+        return temp
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
@@ -78,4 +138,5 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     fun stopReading(view: View){
         this.resume = false
     }
+
 }
