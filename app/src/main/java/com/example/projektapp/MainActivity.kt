@@ -30,7 +30,9 @@ import com.android.volley.toolbox.JsonObjectRequest
 import com.example.projektapp.databinding.ActivityMainBinding
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.gson.Gson
 import org.json.JSONObject
+import java.nio.charset.Charset
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
@@ -59,16 +61,18 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         text1 = binding.text1
 
         testButton.setOnClickListener{
-            getCurrentLocation { loc ->
-                loc[0]?.let { it1 -> postToWeb("test", it1) }
+            getCurrentLocation { roadData ->
+                Log.i("LEO123", roadData.latitude)
+                postToWeb(roadData)
             }
         }
     }
 
-    private fun postToWeb(name: String, value: String){
+    private fun postToWeb(roadData: RoadData){
         // Volley
         val volleyQueue = Volley.newRequestQueue(this)
-        val url = "http://34.65.105.245:3000/test"
+        //val url = "http://34.65.105.245:3000/test"
+        val url = "http://192.168.1.100:3000/test"
 
         val jsonObject = JSONObject()
         jsonObject.put("test", "androidTest")
@@ -83,23 +87,27 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             Response.ErrorListener {
                 Toast.makeText(this, "ERROR", Toast.LENGTH_SHORT).show()
             }) {
-            override fun getParams(): MutableMap<String, String> {
-                val params = HashMap<String, String>()
-                params[name] = value
-                return params
+            override fun getBodyContentType(): String {
+                return "application/json"
+            }
+
+            override fun getBody(): ByteArray {
+                val gson = Gson()
+                val jsonBody = gson.toJson(roadData)
+                return jsonBody.toByteArray(Charset.defaultCharset())
             }
         }
 
         volleyQueue.add(postRequest)
     }
 
-    private fun getCurrentLocation(callback: (Array<String?>) -> Unit) {
+    private fun getCurrentLocation(callback: (RoadData) -> Unit) {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            val loc = arrayOfNulls<String>(2)
+            val loc = RoadData()
             fusedLocationClient.lastLocation
                 .addOnSuccessListener { location: Location? ->
-                    loc[0] = location?.latitude.toString()
-                    loc[1] = location?.longitude.toString()
+                    loc.latitude = location?.latitude.toString()
+                    loc.longitude = location?.longitude.toString()
                     callback(loc)
                 }
         } else {
