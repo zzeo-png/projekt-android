@@ -59,10 +59,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         text1 = binding.text1
 
         testButton.setOnClickListener{
-            val location = getCurrentLocation()
-            /*if(location != null){
-               postToWeb("test", location[0])
-            }*/
+            getCurrentLocation { loc ->
+                loc[0]?.let { it1 -> postToWeb("test", it1) }
+            }
         }
     }
 
@@ -94,19 +93,18 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         volleyQueue.add(postRequest)
     }
 
-    @SuppressLint("MissingPermission")
-    private fun getCurrentLocation(): Array<String>?{
-        var temp = arrayOf<String>()
-        fusedLocationClient.lastLocation
-            .addOnSuccessListener { location: Location? ->
-                temp += location?.latitude.toString()
-                Log.i("LEO", "LATITUDE :" + location?.latitude.toString())
-                Toast.makeText(this, "LATITUDE :" + location?.latitude.toString(), Toast.LENGTH_SHORT).show()
-                temp += location?.longitude.toString()
-                Log.i("LEO", "LONGITUDE :" + location?.longitude.toString())
-                Toast.makeText(this, "LONGITUDE :" + location?.longitude.toString(), Toast.LENGTH_SHORT).show()
-            }
-        return temp
+    private fun getCurrentLocation(callback: (Array<String?>) -> Unit) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            val loc = arrayOfNulls<String>(2)
+            fusedLocationClient.lastLocation
+                .addOnSuccessListener { location: Location? ->
+                    loc[0] = location?.latitude.toString()
+                    loc[1] = location?.longitude.toString()
+                    callback(loc)
+                }
+        } else {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1001)
+        }
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
