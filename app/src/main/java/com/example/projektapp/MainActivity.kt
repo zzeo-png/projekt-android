@@ -14,6 +14,7 @@ import android.location.LocationListener
 import android.location.LocationManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.view.View
@@ -29,10 +30,21 @@ import com.android.volley.Response
 import com.android.volley.toolbox.JsonObjectRequest
 import com.example.projektapp.databinding.ActivityMainBinding
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.Granularity
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.google.gson.Gson
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.nio.charset.Charset
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
@@ -45,6 +57,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var accelerometer: Sensor ?= null
     private var resume = false
+    // minimalna razdalja meritve
+    private val distanceInterval = 1f
+    private lateinit var locationCallback: LocationCallback
+    private lateinit var locationRequest: LocationRequest
+    private var startPosition: Location = Location("")
+    private var endPosition: Location = Location("")
+    private val endPositionDeferred = CompletableDeferred<Location>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,25 +76,59 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         // nastavi accelometer
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
+        locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000).apply {
+            setMinUpdateDistanceMeters(distanceInterval)
+            setGranularity(Granularity.GRANULARITY_FINE)
+            setWaitForAccurateLocation(true)
+        }.build()
+
+        locationCallback = object : LocationCallback(){
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult ?: return
+                for(location in locationResult.locations){
+                    endPositionDeferred.complete(location)
+                }
+            }
+        }
+
         testButton = binding.testButton
         text1 = binding.text1
 
         testButton.setOnClickListener{
-            getCurrentLocation { roadData ->
-                Log.i("LEO123", roadData.latitude)
-                postToWeb(roadData)
-            }
+            startAnalyzing()
+        }
+    }
+
+    private fun startAnalyzing(){
+        CoroutineScope(Dispatchers.Main).launch {
+            // čakaj na začetno lokacijo
+            startPosition = getCurrentLocationAsync()
+
+            // začni sledenje lokacije
+            startLocationUpdates()
+
+            // čakaj na končno lokacijo
+            endPosition = endPositionDeferred.await()
+
+            val data = RoadData(
+                startPosition.latitude,
+                startPosition.longitude,
+                endPosition.latitude,
+                endPosition.longitude
+            )
+
+            stopLocationUpdates()
+
+            // pošlji rezultate
+            postToWeb(data)
         }
     }
 
     private fun postToWeb(roadData: RoadData){
         // Volley
         val volleyQueue = Volley.newRequestQueue(this)
-        //val url = "http://34.65.105.245:3000/test"
-        val url = "http://192.168.1.100:3000/test"
-
-        val jsonObject = JSONObject()
-        jsonObject.put("test", "androidTest")
+        //val url = "http://34.65.105.245:3001/test"
+        val url = "http://192.168.1.6:3001/test"
 
         val postRequest = object: StringRequest(
             Method.POST, url,
@@ -101,17 +154,42 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         volleyQueue.add(postRequest)
     }
 
-    private fun getCurrentLocation(callback: (RoadData) -> Unit) {
+    private fun startLocationUpdates(){
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            val loc = RoadData()
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback,
+                Looper.getMainLooper()
+            )
+        }
+        else{
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1001)
+        }
+    }
+
+    private fun stopLocationUpdates(){
+        fusedLocationClient.removeLocationUpdates(locationCallback)
+    }
+
+    private fun getCurrentLocation(callback: (Location) -> Unit) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             fusedLocationClient.lastLocation
                 .addOnSuccessListener { location: Location? ->
-                    loc.latitude = location?.latitude.toString()
-                    loc.longitude = location?.longitude.toString()
-                    callback(loc)
+                    if(location != null){
+                        callback(location)
+                    }
+                    else{
+                        callback(Location(""))
+                    }
                 }
         } else {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1001)
+        }
+    }
+
+    private suspend fun getCurrentLocationAsync(): Location = suspendCoroutine { continuation ->
+        getCurrentLocation { location ->
+            continuation.resume(location)
         }
     }
 
