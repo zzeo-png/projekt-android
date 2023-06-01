@@ -127,8 +127,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private fun postToWeb(roadData: RoadData){
         // Volley
         val volleyQueue = Volley.newRequestQueue(this)
-        //val url = "http://34.65.105.245:3001/test"
-        val url = "http://192.168.1.6:3001/test"
+        //val url = "http://34.65.105.245:3001/roads"
+        val url = "http://192.168.1.6:3001/roads"
 
         val postRequest = object: StringRequest(
             Method.POST, url,
