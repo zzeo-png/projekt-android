@@ -16,32 +16,39 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
-        android:id="@+id/testButton"
+        android:id="@+id/startTracking"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Test Button"
+        android:text="START TRACKING"
         android:layout_marginTop="20dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/text1" />
+    <Button
+        android:id="@+id/stopTracking"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="STOP TRACKING"
+        android:layout_marginTop="20dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/startTracking" />
 
     <Button
         android:id="@+id/btn_startA"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:onClick="resumeReading"
         android:text="START"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/testButton" />
+        app:layout_constraintTop_toBottomOf="@id/stopTracking" />
 
     <Button
         android:id="@+id/btn_stopA"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:onClick="stopReading"
         android:text="STOP"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
