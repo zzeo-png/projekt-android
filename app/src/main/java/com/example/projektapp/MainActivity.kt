@@ -36,6 +36,7 @@ import org.json.JSONObject
 import java.nio.charset.Charset
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import kotlin.math.abs
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
@@ -43,22 +44,23 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var text1: TextView
     private lateinit var startTracking: Button
     private lateinit var stopTracking: Button
-    private lateinit var startButton: Button
-    private lateinit var stopButton: Button
     private lateinit var sensorManager: SensorManager
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var accelerometer: Sensor ?= null
     private var resume = false
-    // minimalna razdalja meritve
-    private val distanceInterval = 1f
     private lateinit var locationCallback: LocationCallback
     private lateinit var locationRequest: LocationRequest
     private var startPosition: Location = Location("")
     private var endPosition: Location = Location("")
+    private var accQuality = 0f
+    private var tempAccQuality: Float? = null
     private var startPositionDeferred = CompletableDeferred<Location>()
     private var endPositionDeferred = CompletableDeferred<Location>()
     private var trackingStatus: Boolean = false
     private var analyzingCoroutine: Job? = null
+
+    // minimalna razdalja meritve
+    private val distanceInterval = 500f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -102,7 +104,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         stopTracking.setOnClickListener{
             trackingStatus = false
             stopLocationUpdates()
-            stopReading(findViewById(R.id.btn_startA))
+            stopReading(findViewById(R.id.stopTracking))
             analyzingCoroutine?.cancel()
         }
     }
@@ -113,7 +115,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             while(trackingStatus){
                 // čakaj na začetno lokacijo
                 Log.i("LEO123", "started...")
-                //startPosition = getCurrentLocationAsync()
 
                 // začni sledenje lokacije
                 startLocationUpdates()
@@ -121,27 +122,35 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 if(!startPositionDeferred.isCompleted){
                     startPosition = startPositionDeferred.await()
                 }
-                resumeReading(findViewById(R.id.btn_startA))
+                resumeReading(findViewById(R.id.startTracking))
                 Log.i("LEO123", "got start position")
 
                 // čakaj na končno lokacijo
                 endPosition = endPositionDeferred.await()
                 Log.i("LEO123", "got end position")
 
-                // kalkuliraj podatke za stanje
+                // nastavi kvaliteto ceste
+                val quality: Int = if(accQuality > 0f && accQuality < 200f){
+                    0
+                } else if(accQuality >= 200f && accQuality < 500f){
+                    1
+                } else{
+                    2
+                }
 
                 val data = RoadData(
                     startPosition.latitude,
                     startPosition.longitude,
                     endPosition.latitude,
                     endPosition.longitude,
-                    0
+                    quality
                 )
 
                 // ponastavi točki
                 startPosition = endPosition
                 //startPositionDeferred = CompletableDeferred<Location>()
                 endPositionDeferred = CompletableDeferred<Location>()
+                accQuality = 0f
 
                 // pošlji rezultate
                 Log.i("LEO123", "Sending data...")
@@ -153,8 +162,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private fun postToWeb(roadData: RoadData){
         // Volley
         val volleyQueue = Volley.newRequestQueue(this)
-        //val url = "http://34.65.105.245:3001/roads"
-        val url = "http://192.168.1.100:3001/roads"
+        val url = "http://34.65.105.245:3001/roads"
+        //val url = "http://192.168.1.100:3001/roads"
 
         val postRequest = object: StringRequest(
             Method.POST, url,
@@ -200,7 +209,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onSensorChanged(event: SensorEvent?) {
         if(event != null && resume){
             if(event.sensor.type == Sensor.TYPE_ACCELEROMETER){
-                text1.text = event.values[0].toString()
+                if(tempAccQuality != null){
+                    accQuality += abs(tempAccQuality!! - event.values[1])
+                }
+                tempAccQuality = event.values[1]
+                text1.text = event.values[1].toString()
             }
         }
     }
