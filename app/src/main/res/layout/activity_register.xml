@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".Register">
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline"
@@ -14,37 +14,66 @@
         app:layout_constraintGuide_percent=".25"/>
 
     <TextView
-        android:id="@+id/mainHeading"
-        android:text="Pozdravljen"
-        android:fontFamily="@font/lexend_black"
-        android:textSize="30sp"
+        android:id="@+id/RegisterHeader"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:text="NOV UPORABNIK"
+        android:textSize="30sp"
+        app:layout_constraintTop_toBottomOf="@id/guideline"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:fontFamily="@font/lexend_black"
+        />
+
+    <EditText
+        android:id="@+id/RegUsername"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:gravity="center"
+        android:hint="Uporabnikško ime"
+        android:inputType="textPersonName"
+        android:minHeight="48dp"
+        android:layout_marginTop="70dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/guideline" />
+        app:layout_constraintTop_toBottomOf="@id/RegisterHeader" />
+
+    <EditText
+        android:id="@+id/RegPassword"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:ems="10"
+        android:gravity="center"
+        android:hint="Geslo"
+        android:inputType="textPassword"
+        android:minHeight="48dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/RegUsername" />
 
     <Button
-        android:id="@+id/toggleTracking"
+        android:id="@+id/RegisterBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="100dp"
-        android:text="ZAČNI ANALIZO"
-        app:layout_constraintBottom_toTopOf="@id/logoutBtn"
+        android:layout_marginTop="20dp"
+        android:text="REGISTRACIJA"
+        app:layout_constraintBottom_toTopOf="@id/RegisterLoginBtn"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/mainHeading"
+        app:layout_constraintTop_toBottomOf="@id/RegPassword"
         app:layout_constraintVertical_bias="0.0" />
 
     <TextView
-        android:id="@+id/logoutBtn"
+        android:id="@+id/RegisterLoginBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:clickable="true"
         android:minWidth="48dp"
         android:minHeight="48dp"
-        android:text="@string/home_logout_btn"
+        android:text="@string/register_login_btn"
         android:textColor="#878787"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -52,4 +81,5 @@
         android:focusable="true"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginBottom="20dp"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

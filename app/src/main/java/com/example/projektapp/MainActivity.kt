@@ -21,6 +21,8 @@ import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import android.window.OnBackInvokedDispatcher
+import androidx.activity.OnBackPressedCallback
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.android.volley.toolbox.StringRequest
@@ -41,9 +43,8 @@ import kotlin.math.abs
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var text1: TextView
-    private lateinit var startTracking: Button
-    private lateinit var stopTracking: Button
+    private lateinit var mainHeading: TextView
+    private lateinit var toggleTracking: Button
     private lateinit var sensorManager: SensorManager
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var accelerometer: Sensor ?= null
@@ -58,6 +59,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var endPositionDeferred = CompletableDeferred<Location>()
     private var trackingStatus: Boolean = false
     private var analyzingCoroutine: Job? = null
+    private lateinit var logoutButton: TextView
 
     // minimalna razdalja meritve
     private val distanceInterval = 500f
@@ -94,19 +96,35 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
         }
 
-        startTracking = binding.startTracking
-        stopTracking = binding.stopTracking
-        text1 = binding.text1
+        toggleTracking = binding.toggleTracking
+        mainHeading = binding.mainHeading
 
-        startTracking.setOnClickListener{
-            startAnalyzing()
+        logoutButton = binding.logoutBtn
+
+        val username = intent.getStringExtra("username")
+        mainHeading.text = "Pozdravljen, " + username
+
+        toggleTracking.setOnClickListener{
+            if(!trackingStatus){
+                startAnalyzing()
+                toggleTracking.text = "KONČAJ ANALIZO"
+            }
+            else{
+                trackingStatus = false
+                stopLocationUpdates()
+                stopReading(findViewById(R.id.toggleTracking))
+                analyzingCoroutine?.cancel()
+                toggleTracking.text = "ZAČNI ANALIZO"
+            }
         }
-        stopTracking.setOnClickListener{
-            trackingStatus = false
-            stopLocationUpdates()
-            stopReading(findViewById(R.id.stopTracking))
-            analyzingCoroutine?.cancel()
-        }
+
+        logoutButton.setOnClickListener { logout() }
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // prepreči close
+            }
+        })
     }
 
     private fun startAnalyzing(){
@@ -122,7 +140,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 if(!startPositionDeferred.isCompleted){
                     startPosition = startPositionDeferred.await()
                 }
-                resumeReading(findViewById(R.id.startTracking))
+                resumeReading(findViewById(R.id.toggleTracking))
                 Log.i("LEO123", "got start position")
 
                 // čakaj na končno lokacijo
@@ -165,7 +183,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val url = "http://34.65.105.245:3001/roads"
         //val url = "http://192.168.1.100:3001/roads"
 
-        val postRequest = object: StringRequest(
+        val postRequest = object : StringRequest(
             Method.POST, url,
             Response.Listener { response ->
                 //Handle response
@@ -174,7 +192,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             },
             Response.ErrorListener {
                 Toast.makeText(this, "ERROR", Toast.LENGTH_SHORT).show()
-            }) {
+            }
+        ) {
             override fun getBodyContentType(): String {
                 return "application/json"
             }
@@ -213,7 +232,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     accQuality += abs(tempAccQuality!! - event.values[1])
                 }
                 tempAccQuality = event.values[1]
-                text1.text = event.values[1].toString()
             }
         }
     }
@@ -229,7 +247,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     override fun onPause() {
         super.onPause()
-        sensorManager.unregisterListener(this)
+
     }
 
     private fun resumeReading(view: View){
@@ -240,4 +258,38 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         this.resume = false
     }
 
+    private fun logout(){
+        if(trackingStatus){
+            trackingStatus = false
+            stopLocationUpdates()
+            stopReading(findViewById(R.id.toggleTracking))
+            analyzingCoroutine?.cancel()
+            toggleTracking.text = "ZAČNI ANALIZO"
+        }
+        destroyPrefs()
+        val login = Intent(this, LoginActivity::class.java)
+        startActivity(login)
+        overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right)
+        finish()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        destroyPrefs()
+    }
+
+    private fun destroyPrefs(){
+        val sharedPreferences = getSharedPreferences("CestPrefs", Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.remove("LastActivity")
+        editor.apply()
+    }
+
+    private fun setPrefs(){
+        sensorManager.unregisterListener(this)
+        val sharedPreferences = getSharedPreferences("CestPrefs", Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.putString("LastActivity", javaClass.name)
+        editor.apply()
+    }
 }

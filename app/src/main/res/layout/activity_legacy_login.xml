@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".LegacyLogin">
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline"
@@ -14,37 +14,65 @@
         app:layout_constraintGuide_percent=".25"/>
 
     <TextView
-        android:id="@+id/mainHeading"
-        android:text="Pozdravljen"
-        android:fontFamily="@font/lexend_black"
-        android:textSize="30sp"
+        android:id="@+id/legacyLoginHeader"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:text="PRIJAVA"
+        android:textSize="30sp"
+        android:fontFamily="@font/lexend_black"
+        app:layout_constraintTop_toBottomOf="@id/guideline"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <EditText
+        android:id="@+id/username"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:gravity="center"
+        android:hint="uporabnik"
+        android:inputType="textPersonName"
+        android:minHeight="48dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/guideline" />
+        app:layout_constraintTop_toBottomOf="@id/legacyLoginHeader"
+        android:layout_marginTop="70dp"/>
+
+    <EditText
+        android:id="@+id/password"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:ems="10"
+        android:gravity="center"
+        android:hint="geslo"
+        android:inputType="textPassword"
+        android:minHeight="48dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/username" />
 
     <Button
-        android:id="@+id/toggleTracking"
+        android:id="@+id/legacyLoginBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="100dp"
-        android:text="ZAČNI ANALIZO"
-        app:layout_constraintBottom_toTopOf="@id/logoutBtn"
+        android:layout_marginTop="20dp"
+        android:text="PRIJAVA"
+        app:layout_constraintBottom_toTopOf="@id/backBtn"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/mainHeading"
+        app:layout_constraintTop_toBottomOf="@id/password"
         app:layout_constraintVertical_bias="0.0" />
 
     <TextView
-        android:id="@+id/logoutBtn"
+        android:id="@+id/backBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:clickable="true"
         android:minWidth="48dp"
         android:minHeight="48dp"
-        android:text="@string/home_logout_btn"
+        android:text="@string/llogin_back_btn"
         android:textColor="#878787"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -52,4 +80,5 @@
         android:focusable="true"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginBottom="20dp"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
