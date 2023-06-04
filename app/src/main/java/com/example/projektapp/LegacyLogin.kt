@@ -50,8 +50,8 @@ class LegacyLogin : AppCompatActivity() {
     private fun postToWeb(username: String, password: String){
         // Volley
         val volleyQueue = Volley.newRequestQueue(this)
-        //val url = "http://34.65.105.245:3001/llogin"
-        val url = "http://192.168.1.100:3001/llogin"
+        val url = "http://34.65.105.245:3001/llogin"
+        //val url = "http://192.168.1.100:3001/llogin"
 
         val postRequest = object : StringRequest(
             Method.POST, url,

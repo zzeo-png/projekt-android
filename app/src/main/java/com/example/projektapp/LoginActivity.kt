@@ -133,8 +133,8 @@ class LoginActivity : AppCompatActivity() {
         //Log.i("LEO123", "Sending image...")
 
         val volleyQueue = Volley.newRequestQueue(this)
-        //val url = "http://34.65.105.245:3001/login"
-        val url = "http://192.168.1.100:3001/login"
+        val url = "http://34.65.105.245:3001/login"
+        //val url = "http://192.168.1.100:3001/login"
 
         val request = object : VolleyMultipartRequest(
             Method.POST, url,
